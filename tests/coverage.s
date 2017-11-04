@@ -28,48 +28,69 @@ ret
 ;
 ; 3 & 1 = 1
 ;
+nop
 and $3 $1 #8
+nop
 print #8
+nop
 ;
 ; OR (bitwise OR)
 ;
 ; 2 | 0 = 2
 ;
+nop
 or $2 $0 #9
+nop
 print #9
+nop
 ;
 ; NOT (negate all bits)
 ;
 ; ~(-2) = 1
 ;
+nop
 sub $0 $2 #10
+nop
 not #10 #11
+nop
 print #11
+nop
 ;
 ; XOR (exclusive OR)
 ;
 ; (-2) ^ 1 = -1
 ;
+nop
 xor #10 #11 #12
+nop
 print #12
+nop
 ;
 ; LSL (logical shift left)
 ;
 ; ~(0) = -1
 ; -1 << 1 = -2
 ;
+nop
 not $0 #13
+nop
 lsl #13 $1 #13
+nop
 print #13
+nop
 ;
 ; LSR (logical shift right)
 ;
 ; ~(0) = -1
 ; -1 >> 1 = MaxInt
 ;
+nop
 not $0 #13
+nop
 lsr #13 $1 #13
+nop
 print #13
+nop
 ;
 ; ASR (arithmetic shift right)
 ;
@@ -78,9 +99,15 @@ print #13
 ; ~(MaxInt) = MinInt
 ; MinInt >> 1 = 2b'110....0
 ;
+nop
 not $0 #13
+nop
 lsr #13 $1 #13
+nop
 not #13 #13
+nop
 asr #13 $1 #13
+nop
 print #13
+nop
 halt

@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "opcode.h"
 #include "vm.h"
 #include "vm_codegen.h"
-#include "opcode.h"
 
 #if !defined(__GNUC__)
 #error "Only gcc is supported at present"
@@ -36,6 +36,11 @@
 #define END_OPCODES
 
 static inline void vm_push(vm_env *env, size_t n);
+
+#define VM_NOP()  \
+    do {          \
+        DISPATCH; \
+    } while (0)
 
 #define VM_CALL(n)               \
     do {                         \
@@ -216,6 +221,7 @@ void vm_run(vm_env *env)
     OP(JMP) : GOTO(OPCODE.op1.value.id);
     OP(CALL) : VM_CALL(OPCODE.op1.value.id);
     OP(RET) : VM_RET();
+    OP(NOP) : VM_NOP();
 
     OP(HALT) : goto terminate;
 
