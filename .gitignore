@@ -4,3 +4,4 @@ opcode.h
 as_exec
 tests/*.done
 .ycm_extra_conf.py
+tags
