@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "elf.h"
 #include "vm.h"
@@ -189,6 +190,10 @@ static inline vm_operand make_operand(vm_env *env, char *line, const char *data)
         op.type = CONST;
         op.value.id = vm_add_const(env, STR, quoted_strdup(data));
         break;
+    case '@':
+        op.type = LABEL;
+        op.value.label_name = strdup(data + 1);
+        break;
     default:
         printf(
             "Error: please specify operand type for '%s' in the following "
@@ -231,6 +236,14 @@ static inline int make_result(vm_env *env, char *line, const char *data)
     return atoi(data + 1);
 }
 
+static bool isLabel(const char *name)
+{
+    int len = strlen(name);
+    if (len > 1 && name[len - 1] == ':')
+        return true;
+    return false;
+}
+
 static void assemble_line(vm_env *env, char *line)
 {
     char *line_backup = strdup(line);
@@ -238,6 +251,15 @@ static void assemble_line(vm_env *env, char *line)
     char *op1 = quoted_strsep(&line, " ");
     char *op2 = quoted_strsep(&line, " ");
     char *result = quoted_strsep(&line, " ");
+
+    /* for label */
+    if (isLabel(mnemonic)) {
+        mnemonic[strlen(mnemonic) - 1] = '\0';
+        vm_add_label(env, mnemonic);
+        goto cleanup;
+    }
+
+    /* for inst */
     vm_inst new_inst;
     const struct instruction *inst = find_inst(mnemonic);
 
@@ -257,6 +279,7 @@ static void assemble_line(vm_env *env, char *line)
 
     vm_add_inst(env, new_inst);
 
+cleanup:
     free(line_backup);
 }
 

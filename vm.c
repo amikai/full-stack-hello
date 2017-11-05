@@ -1,9 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "opcode.h"
 #include "vm.h"
 #include "vm_codegen.h"
+#include "opcode.h"
+#include "private.h"
 
 #if !defined(__GNUC__)
 #error "Only gcc is supported at present"
@@ -85,6 +86,9 @@ static inline void vm_push(vm_env *env, size_t n);
 /* Instruction max size */
 #define INSTS_MAX_SIZE 200
 
+/* Label max size */
+#define LABEL_MAX_SIZE 256
+
 /* Temporary storage max size */
 #define TEMPS_MAX_SIZE 150
 
@@ -99,7 +103,9 @@ typedef struct {
 } vm_regs;
 
 struct __vm_env {
-    vm_inst insts[INSTS_MAX_SIZE];             /* Program instructions */
+    vm_inst insts[INSTS_MAX_SIZE]; /* Program instructions */
+    vm_label labels[LABEL_MAX_SIZE];
+    vm_operand *labels_ref[INSTS_MAX_SIZE];
     vm_value cpool[CPOOL_MAX_SIZE];            /* Constant pool */
     vm_value temps[TEMPS_MAX_SIZE];            /* Temporary storage */
     vm_opcode_impl impl[OPCODE_IMPL_MAX_SIZE]; /* OPCODE impl */
@@ -107,6 +113,8 @@ struct __vm_env {
     int insts_count;
     int cpool_count;
     int temps_count;
+    int labels_count;
+    int labels_refcnt;
 };
 
 struct __vm_seg_info {
@@ -147,9 +155,40 @@ size_t vm_add_const(vm_env *env, int type, void *value)
 size_t vm_add_inst(vm_env *env, vm_inst inst)
 {
     env->insts[env->insts_count] = inst;
+    if (inst.op1.type == LABEL)
+        env->labels_ref[env->labels_refcnt++] =
+            &env->insts[env->insts_count].op1;
+    if (inst.op2.type == LABEL)
+        env->labels_ref[env->labels_refcnt++] =
+            &env->insts[env->insts_count].op2;
 
     return env->insts_count++;
 }
+
+size_t vm_add_label(vm_env *env, char *name)
+{
+    env->labels[env->labels_count] =
+        (vm_label){.name = strdup(name), .next_pc = env->insts_count};
+    return env->labels_count++;
+}
+
+int find_label(vm_env *env, char *name)
+{
+    for (int i = 0; i < env->labels_count; i++) {
+        if (!strcmp(env->labels[i].name, name))
+            return env->labels[i].next_pc;
+    }
+    FATAL(-1, "Label %s not found\n", name);
+}
+
+void register_label(vm_env *env)
+{
+    for (int i = 0; i < env->labels_refcnt; i++) {
+        env->labels_ref[i]->value.id =
+            find_label(env, env->labels_ref[i]->value.label_name);
+    }
+}
+
 
 static inline void vm_push(vm_env *env, size_t n)
 {

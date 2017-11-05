@@ -6,8 +6,8 @@
 
 #include "as.h"
 #include "opcode.h"
-#include "vm.h"
 #include "private.h"
+#include "vm.h"
 
 typedef enum {
     ASSEMBLE_AND_EVAL,      /* default */
@@ -105,6 +105,7 @@ int main(int argc, char **argv)
     case ASSEMBLE_AND_EVAL: {
         vm_env *env = vm_new();
         assemble_from_fd(env, in_fd);
+        register_label(env);
         hook_opcodes(env);
         vm_run(env);
         vm_free(env);
